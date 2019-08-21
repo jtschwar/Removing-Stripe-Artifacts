@@ -1,5 +1,7 @@
-import numpy as np
 from numpy.fft import fftn, ifftn, fftshift, ifftshift
+from matplotlib import pyplot as plt
+from scipy import ndimage
+import numpy as np
 
 def TV_reconstruction(dataset, Niter = 100, a = 0.1, wedgeSize = 5, theta =0, kmin = 15): 
 
@@ -10,28 +12,10 @@ def TV_reconstruction(dataset, Niter = 100, a = 0.1, wedgeSize = 5, theta =0, km
 	# theta – orientation of the missing wedge (degrees)
 	# kmin – Minimum frequency to start the missing wedge (1/px)
 
-
 	#Import dimensions from dataset
 	(nx, ny) = dataset.shape
 		
-	# Convert angle from Degrees to Radians. 
-	theta = (theta+90)*(np.pi/180)
-	dtheta = wedgeSize*(np.pi/180)
-
-	#Create coordinate grid in polar 
-	x = np.arange(-nx/2, nx/2-1,dtype=np.float64)
-	y = np.arange(-ny/2, ny/2-1,dtype=np.float64)
-	[x,y] = np.meshgrid(x,y,indexing ='ij')
-	rr = (np.square(x) + np.square(y))
-	phi = np.arctan2(x,y) 
-
-	#Create the Mask
-	mask = np.ones( (nx, ny), dtype = np.int8 )
-	mask[np.where((phi >= (theta-dtheta/2)) & (phi <= (theta+dtheta/2)))]  = 0
-	mask[np.where((phi >= (np.pi+theta-dtheta/2)) & (phi <= (np.pi+theta+dtheta/2)))] = 0
-	mask[np.where((phi >= (-np.pi+theta-dtheta/2)) & (phi <= (-np.pi+theta+dtheta/2)))] = 0
-	mask[np.where(rr < np.square(kmin))] = 1 # Keep values below rmin.
-	mask = np.array(mask, dtype = bool) 
+	mask = create_mask(dataset, wedgeSize, theta, kmin)
 
 	#FFT of the Original Image
 	FFT_image = fftshift(fftn(dataset)) 	
@@ -87,4 +71,50 @@ def TVDerivative(img):
 	vst = vst[1:-1, 1:-1]
 	vst = vst/np.linalg.norm(vst)
 	return vst
+
+def create_mask(dataset, wedgeSize, theta, kmin):
+
+	(nx, ny) = dataset.shape
+
+	# Convert missing wedge size and theta to radians.
+	theta = (theta+90)*(np.pi/180)
+	dtheta = wedgeSize*(np.pi/180)
+
+	#Create coordinate grid in polar 
+	x = np.arange(-nx/2, nx/2-1,dtype=np.float64)
+	y = np.arange(-ny/2, ny/2-1,dtype=np.float64)
+	[x,y] = np.meshgrid(x,y,indexing ='xy')
+	rr = (np.square(x) + np.square(y))
+	phi = np.arctan2(y,x) 
+	phi *= -1
+
+	#Create the Mask
+	mask = np.ones( (ny, nx), dtype = np.int8 )
+	mask[np.where((phi >= (theta-dtheta/2)) & (phi <= (theta+dtheta/2)))]  = 0
+	mask[np.where((phi >= (np.pi+theta-dtheta/2)) & (phi <= (np.pi+theta+dtheta/2)))] = 0
+	mask[np.where((phi >= (-np.pi+theta-dtheta/2)) & (phi <= (-np.pi+theta+dtheta/2)))] = 0
+	mask[np.where(rr < np.square(kmin))] = 1 # Keep values below rmin.
+	mask = np.array(mask, dtype = bool)
+	mask = np.transpose(mask)
+	return mask
+
+def view_missing_wedge(dataset, wedgeSize, theta, kmin):
+	
+	FFT_raw = np.log(np.abs(fftshift(fftn(dataset))) + 1)
+
+	mask = create_mask(dataset, wedgeSize, theta, kmin)
+
+	sx = ndimage.sobel(mask, axis=0)
+	sy = ndimage.sobel(mask, axis=1)
+	mask_edge = np.hypot(1*sx,1*sy)
+	mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
+	mask_edge[mask_edge > 0] = 1
+
+	fig, ax = plt.subplots()
+	ax.imshow(FFT_raw, cmap = 'bone')
+	ax.set_title('FFT of Input Image')
+	ax.pcolor(mask_edge, edgecolors='y', linewidths=1)
+	ax.axis('off')
+	plt.show()
+
 

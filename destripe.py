@@ -1,9 +1,8 @@
-from numpy.fft import fftn, ifftn, fftshift, ifftshift
-from matplotlib.widgets import TextBox, Button
+from numpy.fft import fftn, fftshift, ifftn, ifftshift
 from matplotlib import pyplot as plt
-from scipy import ndimage
+from skimage import io
+import scipy as sp
 import numpy as np
-import __future__
 
 
 class destripe:
@@ -39,11 +38,11 @@ class destripe:
 		#Artifact Removal Loop
 		for i in range(self.Niter):
 
-			print('Iteration: ' + str(i))
+			print('Iteration No.: ' + str(i+1) +'/'+str(self.Niter))
 
 			#FFT of Reconstructed Image.
 			FFT_recon = fftshift(fftn(recon_init)) 		
-				
+
 			#Data Constraint
 			FFT_recon[mask] = FFT_image[mask] 			
 
@@ -57,23 +56,25 @@ class destripe:
 
 				#TV Minimization
 				# The basis for TVDerivative (20 iterations and epsilon = 1e-8) was determined by Sidky (2006). 
-				recon_minTV = recon_constraint
+				recon_minTV = recon_constraint.copy()
 				d = np.linalg.norm(recon_minTV - recon_init)
 				for j in range(20):
 					Vst = self.TVDerivative(recon_minTV)
-					recon_minTV = recon_minTV - d * Vst
+					recon_minTV = recon_minTV - self.a * d * Vst
 
 				#Initialize the Next Loop.
-				reconinit = recon_minTV						
+				recon_init = recon_minTV.copy()						
+
+		if save:
+			recon_constraint = recon_constraint/np.amax(recon_constraint)*255
+			io.imsave('recon.tif', np.uint8(recon_constraint))
 
 		#Show reconstruction
 		fig, ax = plt.subplots()
-		ax.imshow(recon_constraint)
+		ax.imshow(recon_constraint, cmap='gray')
 		ax.axis('off')
 		ax.set_title('Reconstruction')	
-
-		if save:
-			## SAVE IMAGE
+		plt.show()
 						
 	def TVDerivative(self, img):
 
@@ -82,12 +83,13 @@ class destripe:
 		fxposy = np.roll(fxy, 1, axis = 0)
 		fnegxy = np.roll(fxy, -1, axis = 1)
 		fposxy = np.roll(fxy, 1, axis = 1)
-		fposxnegy = np.roll( np.roll(fxy, 1, axis = 1), -1, axis = 0 )
-		fnegxposy = np.roll( np.roll(fxy, -1, axis = 1), 1, axis = 0)
-		vst1 = (2*(fxy - fnegxy) +
-				 2*(fxy - fxnegy))/np.sqrt(1e-8 + (fxy - fnegxy)**2 + (fxy - fxnegy)**2)
+		fposxnegy = np.roll(fxy, [-1,1], axis=(0,1))
+		fnegxposy = np.roll(fxy, [1,-1], axis=(0,1))
+		
+		vst1 = (4*fxy - 2*(fnegxy + fxnegy))/np.sqrt(1e-8 + (fxy - fnegxy)**2 + (fxy - fxnegy)**2)
 		vst2 = (2*(fposxy - fxy))/np.sqrt(1e-8 + (fposxy - fxy)**2 + (fposxy - fposxnegy)**2)
 		vst3 = (2*(fxposy - fxy))/np.sqrt(1e-8 + (fxposy - fxy)**2 + (fxposy - fnegxposy)**2)
+		
 		vst = vst1 - vst2 - vst3
 		vst = vst[1:-1, 1:-1]
 		vst = vst/np.linalg.norm(vst)
@@ -125,8 +127,8 @@ class destripe:
 
 		mask = self.create_mask()
 
-		sx = ndimage.sobel(mask, axis=0)
-		sy = ndimage.sobel(mask, axis=1)
+		sx = sp.ndimage.sobel(mask, axis=0)
+		sy = sp.ndimage.sobel(mask, axis=1)
 		mask_edge = np.hypot(1*sx,1*sy)
 		mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
 		mask_edge[mask_edge > 0] = 1

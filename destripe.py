@@ -1,120 +1,173 @@
 from numpy.fft import fftn, ifftn, fftshift, ifftshift
+from matplotlib.widgets import TextBox, Button
 from matplotlib import pyplot as plt
 from scipy import ndimage
 import numpy as np
+import __future__
 
-def TV_reconstruction(dataset, Niter = 100, a = 0.1, wedgeSize = 5, theta =0, kmin = 15): 
 
-	#dataset – real-space image (pixels)
-	#Niter – Number of iterations for reconstruction
-	# a – Decent parameter (unitless, typically 0 – 0.3)
-	# wedgeSize – angular range of the missing wedge (degrees)
-	# theta – orientation of the missing wedge (degrees)
-	# kmin – Minimum frequency to start the missing wedge (1/px)
+class destripe:
 
-	#Import dimensions from dataset
-	(nx, ny) = dataset.shape
-		
-	mask = create_mask(dataset, wedgeSize, theta, kmin)
+	def __init__(self, dataset, Niter, a, wedgeSize, theta, kmin):
+		self.dataset = dataset
+		self.Niter = Niter
+		self.a = a
+		self.wedgeSize = wedgeSize
+		self.theta = theta
+		self.kmin = kmin
 
-	#FFT of the Original Image
-	FFT_image = fftshift(fftn(dataset)) 	
+	def TV_reconstruction(self, save): 
 
-	# Reconstruction starts as random image.		
-	recon_init = np.random.rand(nx,ny) 						
+		#dataset – real-space image (pixels)
+		#Niter – Number of iterations for reconstruction
+		# a – Decent parameter (unitless, typically 0 – 0.3)
+		# wedgeSize – angular range of the missing wedge (degrees)
+		# theta – orientation of the missing wedge (degrees)
+		# kmin – Minimum frequency to start the missing wedge (1/px)
 
-	#Artifact Removal Loop
-	for i in range(Niter):
-
-		#FFT of Reconstructed Image.
-		FFT_recon = fftshift(fftn(recon_init)) 		
+		#Import dimensions from dataset
+		(nx, ny) = self.dataset.shape
 			
-		#Data Constraint
-		FFT_recon[mask] = FFT_image[mask] 			
+		mask = self.create_mask()
 
-		#Inverse FFT
-		recon_constraint = np.real(ifftn(ifftshift(FFT_recon)))
+		#FFT of the Original Image
+		FFT_image = fftshift(fftn(self.dataset)) 	
 
-		#Positivity Constraint 
-		recon_constraint[ recon_constraint < 0 ] = 0
+		# Reconstruction starts as random image.		
+		recon_init = np.random.rand(nx,ny) 						
 
-		if i < Niter -1:  	#ignore on last iteration	
+		#Artifact Removal Loop
+		for i in range(self.Niter):
 
-			#TV Minimization
-			# The basis for TVDerivative (20 iterations and epsilon = 1e-8) was determined by Sidky (2006). 
-			recon_minTV = recon_constraint
-			d = np.linalg.norm(recon_minTV - recon_init)
-			for j in range(20):
-				Vst = TVDerivative(recon_minTV, nx, ny)
-				recon_minTV = recon_minTV - a*d*Vst
+			print('Iteration: ' + str(i))
 
-		#Initialize the Next Loop.
-		reconinit = recon_minTV						
+			#FFT of Reconstructed Image.
+			FFT_recon = fftshift(fftn(recon_init)) 		
+				
+			#Data Constraint
+			FFT_recon[mask] = FFT_image[mask] 			
 
-		#Return the reconstruction. 
-		return recon_constraint 		
-					
-def TVDerivative(img):
+			#Inverse FFT
+			recon_constraint = np.real(ifftn(ifftshift(FFT_recon)))
 
-	fxy = np.pad(img, (1,1), 'constant', constant_values = np.mean(img))
-	fxnegy = np.roll(fxy, -1, axis = 0)
-	fxposy = np.roll(fxy, 1, axis = 0)
-	fnegxy = np.roll(fxy, -1, axis = 1)
-	fposxy = np.roll(fxy, 1, axis = 1)
-	fposxnegy = np.roll( np.roll(fxy, 1, axis = 1), -1, axis = 0 )
-	fnegxposy = np.roll( np.roll(fxy, -1, axis = 1), 1, axis = 0)
-	vst1 = (2*(fxy - fnegxy) +
-			 2*(fxy - fxnegy))/np.sqrt(1e-8 + (fxy - fnegxy)**2 + (fxy - fxnegy)**2)
-	vst2 = (2*(fposxy - fxy))/np.sqrt(1e-8 + (fposxy - fxy)**2 + (fposxy - fposxnegy)**2)
-	vst3 = (2*(fxposy - fxy))/np.sqrt(1e-8 + (fxposy - fxy)**2 + (fxposy - fnegxposy)**2)
-	vst = vst1 - vst2 - vst3
-	vst = vst[1:-1, 1:-1]
-	vst = vst/np.linalg.norm(vst)
-	return vst
+			#Positivity Constraint 
+			recon_constraint[ recon_constraint < 0 ] = 0
 
-def create_mask(dataset, wedgeSize, theta, kmin):
+			if i < self.Niter -1:  	#ignore on last iteration	
 
-	(nx, ny) = dataset.shape
+				#TV Minimization
+				# The basis for TVDerivative (20 iterations and epsilon = 1e-8) was determined by Sidky (2006). 
+				recon_minTV = recon_constraint
+				d = np.linalg.norm(recon_minTV - recon_init)
+				for j in range(20):
+					Vst = self.TVDerivative(recon_minTV)
+					recon_minTV = recon_minTV - d * Vst
 
-	# Convert missing wedge size and theta to radians.
-	theta = (theta+90)*(np.pi/180)
-	dtheta = wedgeSize*(np.pi/180)
+				#Initialize the Next Loop.
+				reconinit = recon_minTV						
 
-	#Create coordinate grid in polar 
-	x = np.arange(-nx/2, nx/2-1,dtype=np.float64)
-	y = np.arange(-ny/2, ny/2-1,dtype=np.float64)
-	[x,y] = np.meshgrid(x,y,indexing ='xy')
-	rr = (np.square(x) + np.square(y))
-	phi = np.arctan2(y,x) 
-	phi *= -1
+		#Show reconstruction
+		fig, ax = plt.subplots()
+		ax.imshow(recon_constraint)
+		ax.axis('off')
+		ax.set_title('Reconstruction')	
 
-	#Create the Mask
-	mask = np.ones( (ny, nx), dtype = np.int8 )
-	mask[np.where((phi >= (theta-dtheta/2)) & (phi <= (theta+dtheta/2)))]  = 0
-	mask[np.where((phi >= (np.pi+theta-dtheta/2)) & (phi <= (np.pi+theta+dtheta/2)))] = 0
-	mask[np.where((phi >= (-np.pi+theta-dtheta/2)) & (phi <= (-np.pi+theta+dtheta/2)))] = 0
-	mask[np.where(rr < np.square(kmin))] = 1 # Keep values below rmin.
-	mask = np.array(mask, dtype = bool)
-	mask = np.transpose(mask)
-	return mask
+		if save:
+			## SAVE IMAGE
+						
+	def TVDerivative(self, img):
 
-def view_missing_wedge(dataset, wedgeSize, theta, kmin):
-	
-	FFT_raw = np.log(np.abs(fftshift(fftn(dataset))) + 1)
+		fxy = np.pad(img, (1,1), 'constant', constant_values = np.mean(img))
+		fxnegy = np.roll(fxy, -1, axis = 0)
+		fxposy = np.roll(fxy, 1, axis = 0)
+		fnegxy = np.roll(fxy, -1, axis = 1)
+		fposxy = np.roll(fxy, 1, axis = 1)
+		fposxnegy = np.roll( np.roll(fxy, 1, axis = 1), -1, axis = 0 )
+		fnegxposy = np.roll( np.roll(fxy, -1, axis = 1), 1, axis = 0)
+		vst1 = (2*(fxy - fnegxy) +
+				 2*(fxy - fxnegy))/np.sqrt(1e-8 + (fxy - fnegxy)**2 + (fxy - fxnegy)**2)
+		vst2 = (2*(fposxy - fxy))/np.sqrt(1e-8 + (fposxy - fxy)**2 + (fposxy - fposxnegy)**2)
+		vst3 = (2*(fxposy - fxy))/np.sqrt(1e-8 + (fxposy - fxy)**2 + (fxposy - fnegxposy)**2)
+		vst = vst1 - vst2 - vst3
+		vst = vst[1:-1, 1:-1]
+		vst = vst/np.linalg.norm(vst)
+		return vst
 
-	mask = create_mask(dataset, wedgeSize, theta, kmin)
+	def create_mask(self):
 
-	sx = ndimage.sobel(mask, axis=0)
-	sy = ndimage.sobel(mask, axis=1)
-	mask_edge = np.hypot(1*sx,1*sy)
-	mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
-	mask_edge[mask_edge > 0] = 1
+		(nx, ny) = self.dataset.shape
 
-	fig, ax = plt.subplots()
-	ax.imshow(FFT_raw, cmap = 'bone')
-	ax.set_title('FFT of Input Image')
-	ax.pcolor(mask_edge, edgecolors='y', linewidths=1)
-	ax.axis('off')
-	plt.show()
+		# Convert missing wedge size and theta to radians.
+		rad_theta = (self.theta+90)*(np.pi/180)
+		dtheta = self.wedgeSize*(np.pi/180)
+
+		#Create coordinate grid in polar 
+		x = np.arange(-nx/2, nx/2-1,dtype=np.float64)
+		y = np.arange(-ny/2, ny/2-1,dtype=np.float64)
+		[x,y] = np.meshgrid(x,y,indexing ='xy')
+		rr = (np.square(x) + np.square(y))
+		phi = np.arctan2(y,x) 
+		phi *= -1
+
+		#Create the Mask
+		mask = np.ones( (ny, nx), dtype = np.int8 )
+		mask[np.where((phi >= (rad_theta-dtheta/2)) & (phi <= (rad_theta+dtheta/2)))]  = 0
+		mask[np.where((phi >= (np.pi+rad_theta-dtheta/2)) & (phi <= (np.pi+rad_theta+dtheta/2)))] = 0
+		mask[np.where((phi >= (-np.pi+rad_theta-dtheta/2)) & (phi <= (-np.pi+rad_theta+dtheta/2)))] = 0
+		mask[np.where(rr < np.square(self.kmin))] = 1 # Keep values below rmin.
+		mask = np.array(mask, dtype = bool)
+		mask = np.transpose(mask)
+		return mask
+
+	def view_missing_wedge(self):
+		
+		FFT_raw = np.log(np.abs(fftshift(fftn(self.dataset))) + 1)
+
+		mask = self.create_mask()
+
+		sx = ndimage.sobel(mask, axis=0)
+		sy = ndimage.sobel(mask, axis=1)
+		mask_edge = np.hypot(1*sx,1*sy)
+		mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
+		mask_edge[mask_edge > 0] = 1
+
+		fig, ax = plt.subplots()
+		ax.imshow(FFT_raw, cmap = 'bone')
+		ax.set_title('FFT of Input Image')
+		ax.pcolor(mask_edge, edgecolors='y', linewidths=1)
+		ax.axis('off')
+		plt.draw()
+
+	def update_missing_wedge(self):
+
+		plt.clf()
+		FFT_raw = np.log(np.abs(fftshift(fftn(self.dataset))) + 1)
+
+		mask = self.create_mask()
+
+		sx = ndimage.sobel(mask, axis=0)
+		sy = ndimage.sobel(mask, axis=1)
+		mask_edge = np.hypot(1*sx,1*sy)
+		mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
+		mask_edge[mask_edge > 0] = 1
+
+		ax = plt.gca()
+		ax.imshow(FFT_raw, cmap = 'bone')
+		ax.set_title('FFT of Input Image')
+		ax.pcolor(mask_edge, edgecolors='y', linewidths=1)
+		ax.axis('off')
+		plt.draw()
+
+	def edit_wedgeSize(self, new_wedgeSize):
+		self.wedgeSize = float(eval(new_wedgeSize))
+		self.update_missing_wedge()
+
+	def edit_theta(self, new_theta):
+		self.theta = float(eval(new_theta))
+		self.update_missing_wedge()
+
+	def edit_kmin(self, new_kmin):
+		self.kmin = float(eval(new_kmin))
+		self.update_missing_wedge()
 
 

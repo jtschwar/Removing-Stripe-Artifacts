@@ -8,9 +8,9 @@ fname = 'nacreous_domain.tif' #file name
 wedgeSize = 5 #angular range (degrees)
 theta = 0 #min frequency to start missing wedge (1/px)
 kmin = 15 #orientation (degrees)
-niter = 10 #number of iterations for reconstruction
+niter = 100 #number of iterations for reconstruction
 a = 0.2 #Descent arameter for TV minimization
-save = False # Set to true to save image 
+save = True # Set to true to save image 
 
 input_img = io.imread('sample_data/' + fname)
 input_img = np.array(input_img, dtype=np.float32)

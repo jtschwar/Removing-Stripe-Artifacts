@@ -2,7 +2,8 @@
 
 The destripe script is designed to remove structured artifacts commonly found in electron microscopy data.
 
-For a more detailed discussion, please see the publication associated with this package: "Removing Stripes, Scratches, and Curtaining with Nonrecoverable Compressed Sensing", Microscopy and Microanalysis (2019), DOI: 10.1017/S1431927619000254 
+For a more detailed discussion, please see the publication associated with this package: 
+**"Removing Stripes, Scratches, and Curtaining with Nonrecoverable Compressed Sensing", Microscopy and Microanalysis (2019), DOI: 10.1017/S1431927619000254** 
 
 
 ## Getting Started 

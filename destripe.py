@@ -1,7 +1,7 @@
 from numpy.fft import fftn, fftshift, ifftn, ifftshift
 from matplotlib import pyplot as plt
+from scipy import ndimage
 from skimage import io
-import scipy as sp
 import numpy as np
 
 
@@ -14,6 +14,7 @@ class destripe:
 		self.wedgeSize = wedgeSize
 		self.theta = theta
 		self.kmin = kmin
+		self.ax = None
 
 	def TV_reconstruction(self, save): 
 
@@ -127,18 +128,24 @@ class destripe:
 
 		mask = self.create_mask()
 
-		sx = sp.ndimage.sobel(mask, axis=0)
-		sy = sp.ndimage.sobel(mask, axis=1)
+		sx = ndimage.sobel(mask, axis=0)
+		sy = ndimage.sobel(mask, axis=1)
 		mask_edge = np.hypot(1*sx,1*sy)
 		mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
 		mask_edge[mask_edge > 0] = 1
 
-		fig, ax = plt.subplots()
-		ax.imshow(FFT_raw, cmap = 'bone')
-		ax.set_title('FFT of Input Image')
-		ax.pcolor(mask_edge, edgecolors='y', linewidths=1)
-		ax.axis('off')
+		fig, (ax1,ax2) = plt.subplots(1,2, figsize=(7,3))
+		ax1.imshow(self.dataset, cmap='bone')
+		ax1.set_title('Input Image')
+		ax1.axis('off')
+		ax2.imshow(FFT_raw, cmap = 'bone')
+		ax2.set_title('FFT of Input Image')
+		ax2.pcolor(mask_edge, edgecolors='y', linewidths=1)
+		ax2.axis('off')
+		plt.tight_layout()
 		plt.draw()
+
+		self.ax = ax2
 
 	def update_missing_wedge(self):
 
@@ -154,10 +161,16 @@ class destripe:
 		mask_edge[mask_edge > 0] = 1
 
 		ax = plt.gca()
-		ax.imshow(FFT_raw, cmap = 'bone')
-		ax.set_title('FFT of Input Image')
-		ax.pcolor(mask_edge, edgecolors='y', linewidths=1)
-		ax.axis('off')
+		ax1 = plt.subplot(121, frameon=False)
+		ax1.imshow(self.dataset, cmap='bone')
+		ax1.set_title('Input Image')
+		ax1.axis('off')
+		ax2 = plt.subplot(122, frameon=False)
+		ax2.imshow(FFT_raw, cmap = 'bone')
+		ax2.set_title('FFT of Input Image')
+		ax2.pcolor(mask_edge, edgecolors='y', linewidths=1)
+		ax2.axis('off')
+		plt.tight_layout()
 		plt.draw()
 
 	def edit_wedgeSize(self, new_wedgeSize):
@@ -172,4 +185,9 @@ class destripe:
 		self.kmin = float(eval(new_kmin))
 		self.update_missing_wedge()
 
+	def edit_niter(self, new_niter):
+		self.Niter = int(new_niter)
+		self.update_missing_wedge()	
 
+	def get_params(self):
+		return int(self.wedgeSize), int(self.theta), int(self.kmin), self.Niter

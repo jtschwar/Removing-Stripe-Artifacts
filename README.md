@@ -10,7 +10,7 @@ For a more detailed discussion, please see the publication associated with this 
 
 The code can be acquired by cloning this repository to your computer, using the green "clone or download" button, or by typing into the command line:
 	
-	`git clone https://github.com/jtschwar/Removing-Stripe-Artifacts.git`
+   `git clone https://github.com/jtschwar/Removing-Stripe-Artifacts.git`
 
 The parameters can be defined in main.py file through the GUI. Simply run the file and choose an orientation/size for the missing of the missing wedge that will remove the artifacts in Fourier space.   
 

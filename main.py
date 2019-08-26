@@ -6,10 +6,10 @@ import destripe
 
 fname = 'nacreous_domain.tif' #file name
 wedgeSize = 5 #angular range (degrees)
-theta = 0 #min frequency to start missing wedge (1/px)
-kmin = 15 #orientation (degrees)
+theta = 0 #orientation (degrees)
+kmin = 15 #min frequency to start missing wedge (1/px)
 niter = 100 #number of iterations for reconstruction
-a = 0.2 #Descent arameter for TV minimization
+a = 0.2 #Descent parameter for TV minimization
 save = True # Set to true to save image 
 
 input_img = io.imread('sample_data/' + fname)

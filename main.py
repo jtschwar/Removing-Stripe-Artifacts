@@ -5,18 +5,25 @@ import numpy as np
 import destripe
 
 fname = 'nacreous_domain.tif' #file name
-wedgeSize = 5 #angular range (degrees)
-theta = 0 #orientation (degrees)
-kmin = 15 #min frequency to start missing wedge (1/px)
+wedgeSize = 5 #angular range (degrees) 
+theta = 0 #orientation (degrees) (+/- 90 degrees)
+kmin = 15 #min frequency to start missing wedge (1/px) ( < 0.5 * Length of image )
 niter = 100 #number of iterations for reconstruction
 a = 0.2 #Descent parameter for TV minimization
 save = True # Set to true to save image 
 
+
+#Read input image
 input_img = io.imread('sample_data/' + fname)
 input_img = np.array(input_img, dtype=np.float32)
 
+# Set parameters to destripe object
 destripe_obj = destripe.destripe(input_img, niter, a, wedgeSize, theta, kmin)
 
+#Check if version of matplotlib can support GUI
+destripe_obj.check_matplotlib_version()
+
+#Submit new parameters in GUI
 def submit_dtheta(wedgeSize):
 	destripe_obj.edit_wedgeSize(wedgeSize)
 	create_input_boxes()
@@ -36,6 +43,7 @@ def submit_niter(niter):
 def run_destripe(event):
 	destripe_obj.TV_reconstruction(save)
 
+# Create GUI
 def create_input_boxes():
 
 	(cwedgeSize, ctheta, ckmin, cniter) = destripe_obj.get_params()

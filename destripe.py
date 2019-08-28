@@ -14,16 +14,15 @@ class destripe:
 		self.wedgeSize = wedgeSize
 		self.theta = theta
 		self.kmin = kmin
-		self.ax = None
 
 	def TV_reconstruction(self, save): 
 
-		#dataset – real-space image (pixels)
-		#Niter – Number of iterations for reconstruction
-		# a – Decent parameter (unitless, typically 0 – 0.3)
-		# wedgeSize – angular range of the missing wedge (degrees)
-		# theta – orientation of the missing wedge (degrees)
-		# kmin – Minimum frequency to start the missing wedge (1/px)
+		#dataset - real-space image (pixels)
+		#Niter - Number of iterations for reconstruction
+		# a - Decent parameter (unitless, typically 0 – 0.3)
+		# wedgeSize - angular range of the missing wedge (degrees)
+		# theta - orientation of the missing wedge (degrees)
+		# kmin - Minimum frequency to start the missing wedge (1/px)
 
 		#Import dimensions from dataset
 		(nx, ny) = self.dataset.shape
@@ -100,6 +99,9 @@ class destripe:
 
 		(nx, ny) = self.dataset.shape
 
+		if self.theta > 90 or self.theta < -90:
+			raise ValueError('Please keep theta between +/- 90 degrees.') 
+
 		# Convert missing wedge size and theta to radians.
 		rad_theta = (self.theta+90)*(np.pi/180)
 		dtheta = self.wedgeSize*(np.pi/180)
@@ -145,8 +147,6 @@ class destripe:
 		plt.tight_layout()
 		plt.draw()
 
-		self.ax = ax2
-
 	def update_missing_wedge(self):
 
 		plt.clf()
@@ -191,3 +191,10 @@ class destripe:
 
 	def get_params(self):
 		return int(self.wedgeSize), int(self.theta), int(self.kmin), self.Niter
+
+	def check_matplotlib_version(self):
+		import matplotlib
+		version = float(matplotlib.__version__[0:3])
+		if version < 2.1:
+			print('Matplotlib is unable to run script, please update.')
+			raise ValueError('Please update matplotlib version above 2.1.') 

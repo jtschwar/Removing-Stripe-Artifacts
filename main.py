@@ -12,7 +12,6 @@ niter = 10 #number of iterations for reconstruction
 a = 0.2 #Descent parameter for TV minimization
 save = True # Set to true to save image 
 
-
 #Read input image
 input_img = io.imread('sample_data/' + fname)
 input_img = np.array(input_img, dtype=np.float32)

@@ -1,8 +1,9 @@
-from numpy.fft import fftn, fftshift, ifftn, ifftshift
+from numpy.fft import fftshift, ifftshift
 from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage import io
 import numpy as np
+import FFTW
 
 
 class destripe:
@@ -14,6 +15,8 @@ class destripe:
 		self.wedgeSize = wedgeSize
 		self.theta = theta
 		self.kmin = kmin
+		self.fftw = FFTW.WrapFFTW(dataset.shape)
+		self.fft_raw = None
 
 	def TV_reconstruction(self, save): 
 
@@ -30,10 +33,12 @@ class destripe:
 		mask = self.create_mask()
 
 		#FFT of the Original Image
-		FFT_image = fftshift(fftn(self.dataset)) 	
+		FFT_image = fftshift(self.fftw.fft(self.dataset)) 	
 
 		# Reconstruction starts as random image.		
-		recon_init = np.random.rand(nx,ny) 						
+		recon_init = np.random.rand(nx,ny) 
+		recon_minTV = np.zeros((nx, ny), dtype=np.float32)
+		recon_constraint = np.zeros((nx,ny), dtype=np.float32)						
 
 		#Artifact Removal Loop
 		for i in range(self.Niter):
@@ -41,13 +46,13 @@ class destripe:
 			print('Iteration No.: ' + str(i+1) +'/'+str(self.Niter))
 
 			#FFT of Reconstructed Image.
-			FFT_recon = fftshift(fftn(recon_init)) 		
+			FFT_recon = fftshift(self.fftw.fft(recon_init)) 	
 
 			#Data Constraint
 			FFT_recon[mask] = FFT_image[mask] 			
 
 			#Inverse FFT
-			recon_constraint = np.real(ifftn(ifftshift(FFT_recon)))
+			recon_constraint = np.real(self.fftw.ifft(ifftshift(FFT_recon)))
 
 			#Positivity Constraint 
 			recon_constraint[ recon_constraint < 0 ] = 0
@@ -56,14 +61,14 @@ class destripe:
 
 				#TV Minimization
 				# The basis for TVDerivative (20 iterations and epsilon = 1e-8) was determined by Sidky (2006). 
-				recon_minTV = recon_constraint.copy()
+				recon_minTV[:] = recon_constraint
 				d = np.linalg.norm(recon_minTV - recon_init)
-				for j in range(20):
+				for j in range(10):
 					Vst = self.TVDerivative(recon_minTV)
 					recon_minTV = recon_minTV - self.a * d * Vst
 
 				#Initialize the Next Loop.
-				recon_init = recon_minTV.copy()						
+				recon_init[:] = recon_minTV						
 
 		if save:
 			recon_constraint = recon_constraint/np.amax(recon_constraint)*255
@@ -99,8 +104,8 @@ class destripe:
 
 		(nx, ny) = self.dataset.shape
 
-		if self.theta > 90 or self.theta < -90:
-			raise ValueError('Please keep theta between +/- 90 degrees.') 
+		# if self.theta > 90 or self.theta < -90:
+		# 	print('Please keep theta between +/- 90 degrees.') 
 
 		# Convert missing wedge size and theta to radians.
 		rad_theta = (self.theta+90)*(np.pi/180)
@@ -126,7 +131,7 @@ class destripe:
 
 	def view_missing_wedge(self):
 		
-		FFT_raw = np.log(np.abs(fftshift(fftn(self.dataset))) + 1)
+		self.fft_raw = np.log(np.abs(fftshift(self.fftw.fft(self.dataset))) + 1)
 
 		mask = self.create_mask()
 
@@ -140,7 +145,7 @@ class destripe:
 		ax1.imshow(self.dataset, cmap='bone')
 		ax1.set_title('Input Image')
 		ax1.axis('off')
-		ax2.imshow(FFT_raw, cmap = 'bone')
+		ax2.imshow(self.fft_raw, cmap = 'bone')
 		ax2.set_title('FFT of Input Image')
 		ax2.pcolor(mask_edge, edgecolors='y', linewidths=1)
 		ax2.axis('off')
@@ -150,7 +155,6 @@ class destripe:
 	def update_missing_wedge(self):
 
 		plt.clf()
-		FFT_raw = np.log(np.abs(fftshift(fftn(self.dataset))) + 1)
 
 		mask = self.create_mask()
 
@@ -166,7 +170,7 @@ class destripe:
 		ax1.set_title('Input Image')
 		ax1.axis('off')
 		ax2 = plt.subplot(122, frameon=False)
-		ax2.imshow(FFT_raw, cmap = 'bone')
+		ax2.imshow(self.fft_raw, cmap = 'bone')
 		ax2.set_title('FFT of Input Image')
 		ax2.pcolor(mask_edge, edgecolors='y', linewidths=1)
 		ax2.axis('off')
@@ -178,7 +182,7 @@ class destripe:
 		self.update_missing_wedge()
 
 	def edit_theta(self, new_theta):
-		self.theta = float(eval(new_theta))
+		self.theta = -float(eval(new_theta)) 
 		self.update_missing_wedge()
 
 	def edit_kmin(self, new_kmin):

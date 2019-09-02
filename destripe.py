@@ -1,8 +1,9 @@
-from numpy.fft import fftn, fftshift, ifftn, ifftshift
+from numpy.fft import fftshift, ifftshift
 from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage import io
 import numpy as np
+import FFTW
 
 
 class destripe:
@@ -14,6 +15,7 @@ class destripe:
 		self.wedgeSize = wedgeSize
 		self.theta = theta
 		self.kmin = kmin
+		self.fftw = FFTW.WrapFFTW(dataset.shape)
 
 	def TV_reconstruction(self, save): 
 
@@ -30,7 +32,7 @@ class destripe:
 		mask = self.create_mask()
 
 		#FFT of the Original Image
-		FFT_image = fftshift(fftn(self.dataset)) 	
+		FFT_image = fftshift(self.fftw.fft(self.dataset)) 	
 
 		# Reconstruction starts as random image.		
 		recon_init = np.random.rand(nx,ny) 						
@@ -41,13 +43,13 @@ class destripe:
 			print('Iteration No.: ' + str(i+1) +'/'+str(self.Niter))
 
 			#FFT of Reconstructed Image.
-			FFT_recon = fftshift(fftn(recon_init)) 		
+			FFT_recon = fftshift(self.fftw.fft(recon_init)) 	
 
 			#Data Constraint
 			FFT_recon[mask] = FFT_image[mask] 			
 
 			#Inverse FFT
-			recon_constraint = np.real(ifftn(ifftshift(FFT_recon)))
+			recon_constraint = np.real(self.fftw.ifft(ifftshift(FFT_recon)))
 
 			#Positivity Constraint 
 			recon_constraint[ recon_constraint < 0 ] = 0
@@ -126,7 +128,7 @@ class destripe:
 
 	def view_missing_wedge(self):
 		
-		FFT_raw = np.log(np.abs(fftshift(fftn(self.dataset))) + 1)
+		FFT_raw = np.log(np.abs(fftshift(self.fftw.fft(self.dataset))) + 1)
 
 		mask = self.create_mask()
 
@@ -150,7 +152,7 @@ class destripe:
 	def update_missing_wedge(self):
 
 		plt.clf()
-		FFT_raw = np.log(np.abs(fftshift(fftn(self.dataset))) + 1)
+		FFT_raw = np.log(np.abs(fftshift(self.fftw.fft(self.dataset))) + 1)
 
 		mask = self.create_mask()
 

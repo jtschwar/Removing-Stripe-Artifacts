@@ -1,3 +1,5 @@
+# Destriping code without using the GUI. 
+
 from matplotlib import pyplot as plt
 from skimage import io
 import numpy as np

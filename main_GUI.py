@@ -1,8 +1,11 @@
+#Check if version of matplotlib can support GUI
+import destripe
+destripe.check_matplotlib_version()
+##################################################
 from matplotlib.widgets import TextBox, Button
 from matplotlib import pyplot as plt
 from skimage import io
 import numpy as np
-import destripe
 
 fname = 'nacreous_domain.tif' #file name
 wedgeSize = 5 #angular range (degrees) 
@@ -18,9 +21,6 @@ input_img = np.array(input_img, dtype=np.float32)
 
 # Set parameters to destripe object
 destripe_obj = destripe.destripe(input_img, niter, a, wedgeSize, theta, kmin)
-
-#Check if version of matplotlib can support GUI
-destripe_obj.check_matplotlib_version()
 
 #Submit new parameters in GUI
 def submit_dtheta(wedgeSize):

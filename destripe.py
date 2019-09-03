@@ -202,9 +202,9 @@ class destripe:
 	def get_params(self):
 		return int(self.wedgeSize), int(self.theta), int(self.kmin), self.Niter
 
-	def check_matplotlib_version(self):
-		import matplotlib
-		version = float(matplotlib.__version__[0:3])
-		if version < 2.1:
-			print('Matplotlib is unable to run script, please update.')
-			raise ValueError('Please update matplotlib version above 2.1.') 
+def check_matplotlib_version():
+	import matplotlib
+	version = float(matplotlib.__version__[0:3])
+	if version < 2.1:
+		print('Matplotlib requires recent version to run GUI.')
+		raise ValueError('Please update Matplotlib to a version above 2.1 or run main_terminal.py instead.') 

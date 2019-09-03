@@ -5,7 +5,7 @@ try:
     import pyfftw
     hasfftw = True
 except ImportError:
-    print('PYFFTW not found, please "pip install pyfftw" for up to 20x speedup')
+    print('PYFFTW not found, please run "pip install pyfftw" for up to 20x speedup')
     hasfftw = False
 
 

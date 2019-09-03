@@ -207,4 +207,5 @@ def check_matplotlib_version():
 	version = float(matplotlib.__version__[0:3])
 	if version < 2.1:
 		print('Matplotlib requires recent version to run GUI.')
+		print('Please run "pip install --upgrade matplotlib"')
 		raise ValueError('Please update Matplotlib to a version above 2.1 or run main_terminal.py instead.') 

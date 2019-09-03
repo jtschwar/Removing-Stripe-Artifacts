@@ -1,4 +1,3 @@
-from matplotlib.widgets import TextBox, Button
 from matplotlib import pyplot as plt
 from skimage import io
 import numpy as np

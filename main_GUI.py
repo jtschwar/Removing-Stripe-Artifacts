@@ -25,19 +25,15 @@ destripe_obj = destripe.destripe(input_img, niter, a, wedgeSize, theta, kmin)
 #Submit new parameters in GUI
 def submit_dtheta(wedgeSize):
 	destripe_obj.edit_wedgeSize(wedgeSize)
-	create_input_boxes()
 
 def submit_theta(theta): 
 	destripe_obj.edit_theta(theta)
-	create_input_boxes()
  
 def submit_kmin(kmin):
 	destripe_obj.edit_kmin(kmin)
-	create_input_boxes()
 
 def submit_niter(niter):
 	destripe_obj.edit_niter(niter)
-	create_input_boxes()
 
 def run_destripe(event):
 	destripe_obj.TV_reconstruction(save)

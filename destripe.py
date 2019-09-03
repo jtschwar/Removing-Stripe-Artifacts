@@ -17,6 +17,7 @@ class destripe:
 		self.kmin = kmin
 		self.fftw = FFTW.WrapFFTW(dataset.shape)
 		self.fft_raw = None
+		self.ax_list = None
 
 	def TV_reconstruction(self, save): 
 
@@ -147,20 +148,18 @@ class destripe:
 		mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
 		mask_edge[mask_edge > 0] = 1
 
-		fig, (ax1,ax2) = plt.subplots(1,2, figsize=(14,6))
-		ax1.imshow(self.dataset, cmap='bone')
-		ax1.set_title('Input Image')
-		ax1.axis('off')
-		ax2.imshow(self.fft_raw, cmap = 'bone')
-		ax2.set_title('FFT of Input Image')
-		ax2.imshow(mask_edge, cmap='viridis_r')
-		ax2.axis('off')
+		fig, self.ax_list = plt.subplots(1,2, figsize=(14,6))
+		self.ax_list[0].imshow(self.dataset, cmap='bone')
+		self.ax_list[0].set_title('Input Image')
+		self.ax_list[0].axis('off')
+		self.ax_list[1].imshow(self.fft_raw, cmap = 'bone')
+		self.ax_list[1].set_title('FFT of Input Image')
+		self.ax_list[1].imshow(mask_edge, cmap='viridis_r')
+		self.ax_list[1].axis('off')
 		plt.tight_layout()
 		plt.draw()
 
 	def update_missing_wedge(self):
-
-		plt.clf()
 
 		mask = self.create_mask()
 
@@ -170,18 +169,8 @@ class destripe:
 		mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
 		mask_edge[mask_edge > 0] = 1
 
-		ax = plt.gca()
-		ax1 = plt.subplot(121, frameon=False)
-		ax1.imshow(self.dataset, cmap='bone')
-		ax1.set_title('Input Image')
-		ax1.axis('off')
-		ax2 = plt.subplot(122, frameon=False)
-		ax2.imshow(self.fft_raw, cmap = 'bone')
-		ax2.set_title('FFT of Input Image')
-		ax2.imshow(mask_edge, cmap='viridis_r')
-		ax2.axis('off')
-		plt.tight_layout()
-		plt.draw()
+		self.ax_list[1].imshow(self.fft_raw, cmap = 'bone')
+		self.ax_list[1].imshow(mask_edge, cmap='viridis_r')
 
 	def edit_wedgeSize(self, new_wedgeSize):
 		self.wedgeSize = float(eval(new_wedgeSize))

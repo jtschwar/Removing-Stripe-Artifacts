@@ -4,7 +4,7 @@ from skimage import io
 import numpy as np
 import destripe
 
-fname = 'nacreous_domain.tif' #file name
+fname = 'stack_0010_cor_DW-1.tif' #file name
 wedgeSize = 5 #angular range (degrees) 
 theta = 0 #orientation (degrees) (+/- 90 degrees)
 kmin = 15 #min frequency to start missing wedge (1/px) ( < 0.5 * Length of image )

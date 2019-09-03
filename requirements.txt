@@ -2,4 +2,4 @@ matplotlib
 scikit-image
 numpy 
 scipy
-fftw
+pyFFTW 

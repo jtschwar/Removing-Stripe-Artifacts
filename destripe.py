@@ -74,11 +74,17 @@ class destripe:
 			recon_constraint = recon_constraint/np.amax(recon_constraint)*255
 			io.imsave('recon.tif', np.uint8(recon_constraint))
 
+		recon_fft = np.log(np.abs(fftshift(self.fftw.fft(recon_constraint))) + 1)
+
 		#Show reconstruction
-		fig, ax = plt.subplots()
-		ax.imshow(recon_constraint, cmap='gray')
-		ax.axis('off')
-		ax.set_title('Reconstruction')	
+		fig, (ax1,ax2) = plt.subplots(1,2, figsize=(14,6))
+		ax1.imshow(recon_constraint, cmap='bone')
+		ax1.set_title('Reconstruction')
+		ax1.axis('off')
+		ax2.imshow(recon_fft, cmap = 'bone')
+		ax2.set_title('FFT of Reconstruction')
+		ax2.axis('off')
+		plt.tight_layout()
 		plt.show()
 						
 	def TVDerivative(self, img):
@@ -104,11 +110,11 @@ class destripe:
 
 		(nx, ny) = self.dataset.shape
 
-		# if self.theta > 90 or self.theta < -90:
-		# 	print('Please keep theta between +/- 90 degrees.') 
+		if self.theta > 90 or self.theta < -90:
+			print('Please keep theta between +/- 90 degrees.') 
 
 		# Convert missing wedge size and theta to radians.
-		rad_theta = (self.theta+90)*(np.pi/180)
+		rad_theta = -(self.theta+90)*(np.pi/180)
 		dtheta = self.wedgeSize*(np.pi/180)
 
 		#Create coordinate grid in polar 
@@ -141,13 +147,13 @@ class destripe:
 		mask_edge = np.ma.masked_where(mask_edge == 0, mask_edge)
 		mask_edge[mask_edge > 0] = 1
 
-		fig, (ax1,ax2) = plt.subplots(1,2, figsize=(7,3))
+		fig, (ax1,ax2) = plt.subplots(1,2, figsize=(14,6))
 		ax1.imshow(self.dataset, cmap='bone')
 		ax1.set_title('Input Image')
 		ax1.axis('off')
 		ax2.imshow(self.fft_raw, cmap = 'bone')
 		ax2.set_title('FFT of Input Image')
-		ax2.pcolor(mask_edge, edgecolors='y', linewidths=1)
+		ax2.imshow(mask_edge, cmap='viridis_r')
 		ax2.axis('off')
 		plt.tight_layout()
 		plt.draw()
@@ -172,7 +178,7 @@ class destripe:
 		ax2 = plt.subplot(122, frameon=False)
 		ax2.imshow(self.fft_raw, cmap = 'bone')
 		ax2.set_title('FFT of Input Image')
-		ax2.pcolor(mask_edge, edgecolors='y', linewidths=1)
+		ax2.imshow(mask_edge, cmap='viridis_r')
 		ax2.axis('off')
 		plt.tight_layout()
 		plt.draw()
@@ -182,7 +188,7 @@ class destripe:
 		self.update_missing_wedge()
 
 	def edit_theta(self, new_theta):
-		self.theta = -float(eval(new_theta)) 
+		self.theta = float(eval(new_theta)) 
 		self.update_missing_wedge()
 
 	def edit_kmin(self, new_kmin):

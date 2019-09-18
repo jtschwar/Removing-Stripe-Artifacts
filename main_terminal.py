@@ -7,12 +7,12 @@ import destripe
 
 fname = 'nacreous_domain.tif' #file name
 wedgeSize = 5 #angular range (degrees) 
-theta = 45 #orientation (degrees) (+/- 90 degrees)
-kmin = 5 #min frequency to start missing wedge (1/px) ( < 0.5 * Length of image )
-niter = 50 #number of iterations for reconstruction
+theta = 0 #orientation (degrees) (+/- 90 degrees)
+kmin = 15 #min frequency to start missing wedge (1/px) ( < 0.5 * Length of image )
+niter = 100 #number of iterations for reconstruction
 a = 0.2 #Descent parameter for TV minimization
-save = True # Set to true to save final reconstruction. 
-show = True # Set to true to see FFT and location of missing wedge. 
+save = 1 # Set to true to save final reconstruction. 
+show = 1 # Set to true to see FFT and location of missing wedge. 
 #If set to false, the reconstruction will run. 
 
 #Read input image

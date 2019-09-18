@@ -80,10 +80,10 @@ class destripe:
 
 		#Show reconstruction
 		fig, (ax1,ax2) = plt.subplots(1,2, figsize=(14,6))
-		ax1.imshow(recon_constraint, cmap='bone')
+		ax1.imshow(recon_constraint, cmap='gray')
 		ax1.set_title('Reconstruction')
 		ax1.axis('off')
-		ax2.imshow(recon_fft, cmap = 'bone')
+		ax2.imshow(recon_fft, cmap = 'gray')
 		ax2.set_title('FFT of Reconstruction')
 		ax2.axis('off')
 		plt.tight_layout()
@@ -137,47 +137,6 @@ class destripe:
 		mask = np.transpose(mask)
 		return mask
 
-	def create_mini_mask(self):
-
-		# Original data size
-		(nx, ny) = self.dataset.shape
-
-		(center_x, center_y) = (nx//2-1, ny//2-1)
-
-		#Area for missing wedge
-		(rnx, rny) = (nx//1.5, ny//1.5)
-
-		if self.theta > 90 or self.theta < -90:
-			print('Please keep theta between +/- 90 degrees.') 
-
-		# Convert missing wedge size and theta to radians.
-		rad_theta = -(self.theta+90)*(np.pi/180)
-		dtheta = self.wedgeSize*(np.pi/180)
-
-		#Create coordinate grid in polar 
-		x = np.arange(-rnx/2, rnx/2-1,dtype=np.float64)
-		y = np.arange(-rny/2, rny/2-1,dtype=np.float64)
-		[x,y] = np.meshgrid(x,y,indexing ='xy')
-		rr = (np.square(x) + np.square(y))
-		phi = np.arctan2(y,x) 
-		phi *= -1
-
-		#Create the Mask
-		mask = np.ones( (rny, rnx), dtype = np.int8 )
-		mask[np.where((phi >= (rad_theta-dtheta/2)) & (phi <= (rad_theta+dtheta/2)))]  = 0
-		mask[np.where((phi >= (np.pi+rad_theta-dtheta/2)) & (phi <= (np.pi+rad_theta+dtheta/2)))] = 0
-		mask[np.where((phi >= (-np.pi+rad_theta-dtheta/2)) & (phi <= (-np.pi+rad_theta+dtheta/2)))] = 0
-		mask[np.where(rr < np.square(self.kmin))] = 1 # Keep values below rmin.
-		mask = np.array(mask, dtype = bool)
-		mask = np.transpose(mask)
-
-		full_mask = np.ones((ny, nx), dtype = np.int8)
-		full_mask[center_x-rnx//2:center_x+rnx//2,center_y-rny//2:center_y+rny//2] = mask
-		full_mask = np.array(full_mask, dtype = bool)
-
-		return full_mask
-
-
 	def view_missing_wedge(self):
 		
 		self.fft_raw = np.log(np.abs(fftshift(self.fftw.fft(self.dataset))) + 1)
@@ -196,7 +155,7 @@ class destripe:
 		self.ax_list[0].axis('off')
 		self.ax_list[1].imshow(self.fft_raw, cmap = 'gray')
 		self.ax_list[1].set_title('FFT of Input Image')
-		self.ax_list[1].imshow(mask_edge, cmap='viridis_r', alpha=0.3)
+		self.ax_list[1].imshow(mask_edge, cmap='viridis_r', alpha=0.4)
 		self.ax_list[1].axis('off')
 		plt.tight_layout()
 		plt.draw()
@@ -212,7 +171,7 @@ class destripe:
 		mask_edge[mask_edge > 0] = 1
 
 		self.ax_list[1].imshow(self.fft_raw, cmap = 'gray')
-		self.ax_list[1].imshow(mask_edge, cmap='viridis_r', alpha=0.3)
+		self.ax_list[1].imshow(mask_edge, cmap='viridis_r', alpha=0.4)
 
 	def edit_wedgeSize(self, new_wedgeSize):
 		self.wedgeSize = float(eval(new_wedgeSize))

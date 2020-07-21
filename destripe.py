@@ -131,7 +131,10 @@ class destripe:
 		mask = np.ones( (ny, nx), dtype = np.int8 )
 		mask[np.where((phi >= (rad_theta-dtheta/2)) & (phi <= (rad_theta+dtheta/2)))]  = 0
 		mask[np.where((phi >= (np.pi+rad_theta-dtheta/2)) & (phi <= (np.pi+rad_theta+dtheta/2)))] = 0
-		mask[np.where((phi >= (-np.pi+rad_theta-dtheta/2)) & (phi <= (-np.pi+rad_theta+dtheta/2)))] = 0
+		
+		if self.theta + self.wedgeSize/2 > 90:
+			mask[np.where(phi >= (np.pi - dtheta/2))] = 0 
+
 		mask[np.where(rr < np.square(self.kmin))] = 1 # Keep values below rmin.
 		mask = np.array(mask, dtype = bool)
 		mask = np.transpose(mask)
